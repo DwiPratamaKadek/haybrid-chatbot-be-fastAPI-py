@@ -1,0 +1,35 @@
+fastapi
+uvicorn[standard]
+
+pydantic
+python-dotenv
+httpx
+requests
+python-multipart
+nltk
+
+# AI / RAG
+google-genai==1.55.0
+
+langchain
+langchain-community
+langchain-core
+langchain-text-splitters
+
+transformers==4.41.2
+torch==2.2.2
+sentence-transformers==2.7.0
+
+sentence-transformers
+huggingface-hub
+
+numpy
+scikit-learn
+
+FlagEmbedding==1.2.10
+rank-bm25
+
+# Data
+pandas
+beautifulsoup4
+lxml
