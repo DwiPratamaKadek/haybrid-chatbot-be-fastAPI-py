@@ -2,8 +2,9 @@ from src.model.ml.Bm25Model import Bm25Model
 from src.model.ml.BgeBiEmbeddingModel import BgeBiEmbeddingModel
 from src.model.ml.CrossReranking import CrossReranker
 from src.model.crud.HistoryCrud import create
-
+from src.model.crud.HistoryCrud import getAll
 from src.service.GeminiService import GeminiService
+from core.Request.ChabotReq import ChabotRequest
 
 import pandas as pd 
 import os
@@ -47,56 +48,68 @@ class RAGhybrid :
 
         return reranked
 
-    def chat(self, query, session=None) : 
+    def chat(self, req:ChabotRequest, session=None) : 
         # 1 BM25 
-        bm25_doc = self.bm25.retrieve(query)
+        bm25_doc = self.bm25.retrieve(req.message)
         # 2 Bi embeding 
         bi_docs = self.biEncoder.semantic_filter(
-            query,
+            req.message,
             bm25_doc, 
             top_k=5
         )
         # cross reranking 
         reranked_docs = self.crossRerank.rerank(
-            query=query,
+            query=req.message,
             document=bi_docs, 
             top_k=3
         )
         if not reranked_docs: 
             return{
-                "query" : query,
+                "query" : req.message,
                 "answer" : "Informasi tidak ditemukan"
             }
-        # self.hybrid_search(query)        
+        
         # Gabungkan context
         context = "\n\n".join([doc.page_content for doc in reranked_docs])
-        # context = "\n\n".join([doc.page_content for doc in self.hybrid_search])
         reranked_answare = context 
       
-        
-
         #prompt gemini 
         prompt = f"""
-        Konteks:
-        {context}
+        ATURAN:
+        - Jawab hanya dari konteks
+        - Jika tidak ada jawaban → katakan "Tidak ditemukan dalam data"
 
-        Pertanyaan: {query}
+        Konteks:
+        {reranked_answare}
+
+        Pertanyaan: {req.message}
         Jawaban:
         """
 
         answer = self.gemini.generate(prompt)
 
-        # 🔥 SIMPAN KE DB
-        if session:
-            create(session, {
-                "session_id": "user_1",
-                "question": query,
-                "answer": answer,
-                "context": context
-            })
+        # ===================== SIMPAN KE DB =========================
+        
+        create(session, {
+            "user_id": req.user_id,
+            "session_id" : req.session_id,
+            "message": req.message,
+            "role": "user",
+        })
 
+        create(session,{
+            "user_id": req.user_id,
+            "session_id" : req.session_id,
+            "message": answer,
+            "role": "assistant",
+        })
+        
         return {
-            "query": query,
-            "answer": answer
+            "query" : req.message, 
+            "answer" : answer
         }
+    
+    def get_chat_per_room(self, session=None):
+        return getAll(session)
+        
 
