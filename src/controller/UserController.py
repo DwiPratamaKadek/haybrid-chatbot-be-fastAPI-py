@@ -1,6 +1,7 @@
 from src.service.UserService import UserService
 
-from core.Request.UserReq import UserRequest
+from core.Request.UserReq import UserRequest, UserLogin
+from fastapi import HTTPException
 
 class UserController:
     def __init__(self):
@@ -11,7 +12,7 @@ class UserController:
             result = self.service.create_user(req, session)
 
             return{
-                "status" : "error",
+                "status" : "success",
                 "data" : result
             }
         except Exception as e: 
@@ -24,7 +25,7 @@ class UserController:
         try: 
             result = self.service.get_all_user(session)
             return{
-                "status" : "error",
+                "status" : "success",
                 "data" : result
             }
         except Exception as e: 
@@ -32,3 +33,16 @@ class UserController:
                 "status" : "error",
                 "data" : str(e)
             }
+    
+    def login(self, req:UserLogin, session, response):
+        try: 
+            result = self.service.login(req, session, response)
+            return{
+                "status" : "success",
+                "data" : result
+            }
+        except Exception as e: 
+            raise HTTPException(
+                status_code=500,
+                detail=f"Error: {repr(e)}"
+            )

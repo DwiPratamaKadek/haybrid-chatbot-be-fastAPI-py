@@ -11,30 +11,10 @@ def create(session: Session, data:dict):
 def getAll(session: Session ): 
     return session.exec(select(User)).all()
 
-def getById(session: Session, id: int): 
-    return session.get(User, id)
 
-def update(session: Session, id: int, data: dict): 
-    user = session.get(User, id)
-
-    if not user: 
-        return None
-    for key, value in data.items():
-        setattr(user, key, value)
-
-    session.add(user)
-    session.commit()
-    session.refresh(user)
+def getByName(session:Session, name:str): 
+    user = session.exec(
+        select(User).where(User.name == name)
+    ).first()
 
     return user
-
-def delete(session: Session, id: int):
-    user = session.get(User, id)
-
-    if not user: 
-        return None
-    
-    session.delete(user)
-    session.commit()
-
-    return True
